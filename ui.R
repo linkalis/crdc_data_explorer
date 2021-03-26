@@ -14,7 +14,7 @@ ui <- fluidPage(
       uiOutput("schoolSelector"),
       
       p("Filter schools:"),
-      checkboxInput('elementaryschool', 'Elementary (K-5)', value = TRUE),
+      checkboxInput('elementaryschool', 'Elementary (1-5)', value = TRUE),
       checkboxInput('middleschool', 'Middle school (6-8)', value = TRUE),
       checkboxInput('highschool', 'High school (9-12)', value = TRUE),
       checkboxInput('otherschool', 'Other level', value = TRUE),
@@ -41,17 +41,17 @@ ui <- fluidPage(
     mainPanel(
       fluidRow(
         column(width = 6, 
-               textOutput("selected_lea"),
-               textOutput("selected_school"),
-               textOutput("schoolmeta_elementary"),
-               textOutput("schoolmeta_middleschool"),
-               textOutput("schoolmeta_highschool")
+               textOutput("selectedLea"),
+               textOutput("selectedSchool"),
+               textOutput("schoolmetaElementary"),
+               textOutput("schoolmetaMiddleschool"),
+               textOutput("schoolmetaHighschool")
                ),
         column(width = 6,
-               textOutput("schoolmeta_specialed"),
-               textOutput("schoolmeta_alternative"),
-               textOutput("schoolmeta_charter"),
-               textOutput("schoolmeta_magnet")
+               textOutput("schoolmetaSpecialed"),
+               textOutput("schoolmetaAlternative"),
+               textOutput("schoolmetaCharter"),
+               textOutput("schoolmetaMagnet")
                )
       ),
       
@@ -92,7 +92,7 @@ ui <- fluidPage(
       
       hr(),
       h2("Student Support Profile"),
-      # per capita counts...
+      p(strong("Lower student-to-staff ratios are better."))
       
       
     )

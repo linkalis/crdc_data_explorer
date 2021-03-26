@@ -1,6 +1,14 @@
+library(shiny)
+library(tidyverse)
+library(gridExtra)
+
+source("helpers.R")
+
 ##################
 ## READ IN DATA ##
 ##################
+
+# UI SELECTORS
 
 # LEA data
 lea_data <- read.csv("../2017-18 Public-Use Files/Data/LEA/CRDC/CSV/LEA Characteristics.csv")
@@ -8,9 +16,19 @@ lea_data <- read.csv("../2017-18 Public-Use Files/Data/LEA/CRDC/CSV/LEA Characte
 # School data
 source_dir = "../2017-18 Public-Use Files/Data/SCH/CRDC/CSV/"
 
-school_characteristics <- read.csv(paste0(source_dir, 'School Characteristics.csv'))  # Note: This populates school selector
+# Note: This file populates our school selector
+school_characteristics <- read.csv(paste0(source_dir, 'School Characteristics.csv')) %>%
+  mutate(
+    elementary_school = ifelse(SCH_GRADE_G01 == 'Yes' | SCH_GRADE_G02 == 'Yes' | SCH_GRADE_G03 == 'Yes' | SCH_GRADE_G04 == 'Yes' | SCH_GRADE_G05 == 'Yes', 'Yes', 'No'),
+    middle_school = ifelse(SCH_GRADE_G06 == 'Yes' | SCH_GRADE_G07 == 'Yes' | SCH_GRADE_G08 == 'Yes', 'Yes', 'No'),
+    high_school = ifelse(SCH_GRADE_G09 == 'Yes' | SCH_GRADE_G10 == 'Yes' | SCH_GRADE_G11 == 'Yes' | SCH_GRADE_G12 == 'Yes', 'Yes', 'No'),
+    other_level = ifelse(SCH_GRADE_PS == 'Yes' | SCH_GRADE_KG == 'Yes' | SCH_GRADE_UG == 'Yes', 'Yes', 'No')
+  )
 
+# ENROLLMENT DEMOGRAPHICS
 enrollment <- read.csv(paste0(source_dir, 'Enrollment.csv'))
+
+# ACADEMIC OPPORTUNITIES
 gifted_and_talented <- read.csv(paste0(source_dir, 'Gifted and Talented.csv'))
 advanced_placement <- read.csv(paste0(source_dir, 'Advanced Placement.csv'))
 international_baccalaureate <- read.csv(paste0(source_dir, 'International Baccalaureate.csv'))
@@ -18,7 +36,13 @@ advanced_mathematics <- read.csv(paste0(source_dir, 'Advanced Mathematics.csv'))
 physics <- read.csv(paste0(source_dir, 'Physics.csv'))
 chemistry <- read.csv(paste0(source_dir, 'Chemistry.csv'))
 calculus <- read.csv(paste0(source_dir, 'Calculus.csv'))
+
+# SCHOOL CLIMATE
 harassment_and_bullying <- read.csv(paste0(source_dir, 'Harassment and Bullying.csv'))
+
+# STUDENT SUPPORT
+school_support <- read.csv(paste0(source_dir, 'School Support.csv'))
+
 
 
 #################################

@@ -1,6 +1,4 @@
 library(shiny)
-library(gridExtra)
-source("helpers.R")
 
 server <- function(input, output) {
   
@@ -31,52 +29,54 @@ server <- function(input, output) {
       # filter(if (!input$otherschool) (SCH_GRADE_PS == 'No' & SCH_GRADE_UG == 'No') else TRUE ) %>%
       # filter(if (!input$magnetcharter) (SCH_STATUS_MAGNET == 'No' & SCH_STATUS_CHARTER == 'No') else TRUE ) %>%
       # filter(if (!input$altspecialed) (SCH_STATUS_ALT == 'No' & SCH_STATUS_SPED == 'No') else TRUE ) %>%
+      #{ if (input$elementaryschool == TRUE) filter(., elementary_school == 'Yes') else filter(., elementary_school == 'No') } %>%
+      # filter(if (input$middleschool) middle_school == 'Yes' else middle_school == 'No' ) %>%
+      # filter(if (input$highschool) high_school == 'Yes' else high_school == 'No' ) %>%
+      # filter(if (input$otherschool) other_level == 'Yes' else other_level == 'No' ) %>%
+      # filter(if (input$magnetcharter) SCH_STATUS_MAGNET == 'Yes' | SCH_STATUS_CHARTER == 'Yes' else SCH_STATUS_MAGNET == 'No' & SCH_STATUS_CHARTER == 'No' ) %>%
+      # filter(if (input$altspecialed) SCH_STATUS_ALT == 'Yes' | SCH_STATUS_SPED == 'Yes' else SCH_STATUS_ALT == 'No' & SCH_STATUS_SPED == 'No' ) %>%
       arrange(SCH_NAME) %>%
       summarise(school_list = list(as.list(setNames(SCHID, SCH_NAME))))
 
+    # This approach isn't working to filter: https://stackoverflow.com/questions/32148144/condition-filter-in-dplyr-based-on-shiny-input?rq=1
+    
     selectInput("selected_school_id", "Choose a School:", schools$school_list[[1]])
   })
   
   # Confirm choices
-  output$selected_lea <- renderText({ paste("Selected LEAID:", input$selected_lea_id ) })
-  output$selected_school <- renderText({ paste("Selected SCHID:", input$selected_school_id ) })
+  output$selectedLea <- renderText({ paste("Selected LEAID:", input$selected_lea_id ) })
+  output$selectedSchool <- renderText({ paste("Selected SCHID:", input$selected_school_id ) })
   
   
   ##############
   ## GET DATA ##
   ##############
-  
   # Extract data when school is selected
   
-  # METADATA
+  # SCHOOL METADATA
   
   school_metadata <- reactive({
     school_characteristics %>%
-      filter(LEAID == input$selected_lea_id & SCHID == input$selected_school_id) %>%
-      mutate(
-        elementary_school = ifelse(SCH_GRADE_G01 == 'Yes' | SCH_GRADE_G02 == 'Yes' | SCH_GRADE_G03 == 'Yes' | SCH_GRADE_G04 == 'Yes' | SCH_GRADE_G05 == 'Yes', 'Yes', 'No'),
-        middle_school = ifelse(SCH_GRADE_G06 == 'Yes' | SCH_GRADE_G07 == 'Yes' | SCH_GRADE_G08 == 'Yes', 'Yes', 'No'),
-        high_school = ifelse(SCH_GRADE_G09 == 'Yes' | SCH_GRADE_G10 == 'Yes' | SCH_GRADE_G11 == 'Yes' | SCH_GRADE_G12 == 'Yes', 'Yes', 'No')
-      )
+      filter(LEAID == input$selected_lea_id & SCHID == input$selected_school_id)
   })
   
-  output$schoolmeta_elementary <- renderText({
+  output$schoolmetaElementary <- renderText({
     paste("Elementary grade levels?:", school_metadata()$elementary_school)
   })
   
-  output$schoolmeta_middleschool <- renderText({
+  output$schoolmetaMiddleschool <- renderText({
     paste("Middle school grade levels?:", school_metadata()$middle_school)
   })
   
-  output$schoolmeta_highschool <- renderText({
+  output$schoolmetaHighschool <- renderText({
     paste("High school grade levels?:", school_metadata()$high_school)
   })
   
-  output$schoolmeta_specialed <- renderText({
+  output$schoolmetaSpecialed <- renderText({
     paste("Special Education School:", school_metadata()$SCH_STATUS_SPED)
   })
   
-  output$schoolmeta_alternative <- renderText({
+  output$schoolmetaAlternative <- renderText({
     if (school_metadata()$SCH_STATUS_ALT == 'Yes') {
       paste("Alternative School:", school_metadata()$SCH_STATUS_ALT, '(', school_metadata()$SCH_ALTFOCUS, ')', sep = ' ')
     } else {
@@ -84,11 +84,11 @@ server <- function(input, output) {
     }
   })
   
-  output$schoolmeta_charter <- renderText({
+  output$schoolmetaCharter <- renderText({
     paste("Charter School:", school_metadata()$SCH_STATUS_CHARTER, sep=' ')
   })
   
-  output$schoolmeta_magnet <- renderText({
+  output$schoolmetaMagnet <- renderText({
     if (school_metadata()$SCH_STATUS_MAGNET == 'Yes') {
       paste("Magnet School:", school_metadata()$SCH_STATUS_MAGNET, '(', school_metadata()$SCH_MAGNETDETAIL, ')', sep=' ')
     } else {
@@ -329,7 +329,7 @@ server <- function(input, output) {
   ## STUDENT SUPPORT PROFILE ##
   #############################
   
-  
+  # Get state-level data for context
   
   
 }
