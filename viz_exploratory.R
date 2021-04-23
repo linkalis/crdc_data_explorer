@@ -1,3 +1,5 @@
+library(tidyverse)
+
 source_dir = "../2017-18 Public-Use Files/Data/SCH/CRDC/CSV/"
 
 school_characteristics <- read.csv(paste0(source_dir, 'School Characteristics.csv'))
@@ -8,18 +10,19 @@ advanced_mathematics <- read.csv(paste0(source_dir, 'Advanced Mathematics.csv'))
 physics <- read.csv(paste0(source_dir, 'Physics.csv'))
 harassment_and_bullying <- read.csv(paste0(source_dir, 'Harassment and Bullying.csv'))
 offenses <- read.csv(paste0(source_dir, 'Offenses.csv'))
+referrals_arrests <- read.csv(paste0(source_dir, 'Referrals and Arrests.csv'))
 
 school_support <- read.csv(paste0(source_dir, 'School Support.csv'))
 
 # School examples:
-filter(LEAID == '2711250' & SCHID == '510') %>% # Edina
+#filter(LEAID == '2711250' & SCHID == '510') %>% # Edina
 
 
 
 # VARTIABLE TYPE 1: ETHNICITY, SEX DISAGGREGATED #########################################################
 
 ethnicity_sex_disagg_vars_to_extract <- list(
-  # Enrollment Counts
+  # Total enrollment
   list(
     code = 'SCH_ENR',
     var_name = 'Total Enrollment', 
@@ -134,17 +137,67 @@ for (var in ethnicity_sex_disagg_vars_to_extract) {
 # VARIABLE TYPE 2: ETHNICITY, SEX, DISABILITY STATUS DISAGGREGATED ####################################
 
 ethnicity_sex_disability_disagg_vars_to_extract <- list(
-  # Enrollment
+  # Referrals to law enforcement
   list(
     code = 'SCH_REF',
     var_name = 'Students referred to a law enforcement agency or official', 
-    pattern = c('SCH_DISCWDIS_REF_(HI|AM|AS|HP|BL|WH|TR)', 'SCH_DISCWDIS_REF_IDEA_(HI|AM|AS|HP|BL|WH|TR)'),
-    source_file = 'enrollment'
+    pattern = c('SCH_DISCWODIS_REF_(HI|AM|AS|HP|BL|WH|TR)', 'SCH_DISCWDIS_REF_IDEA_(HI|AM|AS|HP|BL|WH|TR)'),
+    source_file = 'referrals_arrests'
   )
 )
 
 
+ethnicity_sex_disability_disagg_vars <- data.frame(
+  LEAID = character(),
+  SCHID = character(),
+  VAR_ORIGINAL = character(),
+  STUDENT_COUNT = numeric(),
+  VARIABLE_NAME = character(),
+  VARIABLE_CODE = character(),
+  ETHNICITY = character(),
+  ETHNICITY_DESCR = character(),
+  GENDER = character(),
+  GENDER_DESCR = character(),
+  DISABILITY_DESCR = character()
+)
 
+for (var in ethnicity_sex_disability_disagg_vars_to_extract) {
+  tmp <- get(var$source_file) %>%
+    #read.csv(paste0(source_dir, var$source_file)) %>%
+    #filter(LEAID == '2711250' & SCHID == '510') %>% # Edina
+    filter(LEA_STATE == 'CA' & SCHID == '7868') %>% # School in CA w/ lots of bullying
+    select(
+      LEAID,
+      SCHID,
+      matches(var$pattern)
+    ) %>%
+    gather(-LEAID, -SCHID, key = 'VAR_ORIGINAL', value='STUDENT_COUNT') %>%
+    mutate(
+      VARIABLE_NAME = var$var_name,
+      VARIABLE_CODE = var$code,
+      ETHNICITY = str_sub(VAR_ORIGINAL, -4, -3),
+      ETHNICITY_DESCR = case_when(
+        ETHNICITY == 'HI' ~ 'Hispanic',
+        ETHNICITY == 'AM' ~ 'American Indian/Alaska Native',
+        ETHNICITY == 'AS' ~ 'Asian',
+        ETHNICITY == 'HP' ~ 'Native Hawaiian/Pacific Islander',
+        ETHNICITY == 'BL' ~ 'Black',
+        ETHNICITY == 'WH' ~ 'White',
+        ETHNICITY == 'TR' ~ 'Two or More Races',
+        TRUE ~ 'Unknown'
+      ),
+      GENDER = str_sub(VAR_ORIGINAL, -1),
+      GENDER_DESCR = case_when(
+        GENDER == 'M' ~ 'Male',
+        GENDER == 'F' ~ 'Female',
+        TRUE ~ 'Unknown'
+      ),
+      DISABILITY_DESCR = ifelse(str_detect(VAR_ORIGINAL, 'IDEA'), 'IDEA', 'None')
+    )
+  
+  ethnicity_sex_disability_disagg_vars <- bind_rows(tmp, ethnicity_sex_disability_disagg_vars)
+  rm(tmp)
+}
 
 
 # VARIABLE TYPE 3: OTHER ###############################################################################
@@ -515,3 +568,34 @@ ggplot(school_support_per_student_w_state_avg, aes(x=NA, y=STAFFING_RATIO, fill=
 
   
 # Pct of teaching staff that is in their first few years of teaching
+
+
+# DISCIPLINE PRACTICES
+
+tot_enrollment_by_sex_disability <- ethnicity_sex_disagg_vars %>%
+  filter(VARIABLE_CODE == 'SCH_ENR') %>%
+  inner_join(ethnicity_sex_disagg_vars %>% filter(VARIABLE_CODE == 'SCH_IDEAENR'), by=c('LEAID', 'SCHID', 'ETHNICITY', 'GENDER'), suffix=c('_TOT', '_IDEA')) %>%
+  mutate(
+    VARIABLE_CODE = 'SCH_ENR_DISAGG',
+    VARIABLE_NAME = 'Total Enrollment (disaggregated by sex, ethnicity, disability status)',
+    STUDENT_COUNT = STUDENT_COUNT_TOT - STUDENT_COUNT_IDEA,
+    VAR_ORIGINAL = '-',
+    DISABILITY_DESCR = 'None'
+  ) %>%
+  select(
+    LEAID, SCHID, VAR_ORIGINAL, STUDENT_COUNT, VARIABLE_NAME, VARIABLE_CODE, 
+    ETHNICITY, ETHNICITY_DESCR = ETHNICITY_DESCR_TOT, 
+    GENDER, GENDER_DESCR = GENDER_DESCR_TOT, DISABILITY_DESCR
+    ) %>%
+  bind_rows(
+    ethnicity_sex_disagg_vars %>%
+      filter(VARIABLE_CODE == 'SCH_IDEAENR') %>%
+      mutate(
+        VARIABLE_CODE = 'SCH_ENR_DISAGG',
+        VARIABLE_NAME = 'Total Enrollment (disaggregated by sex, ethnicity, disability status)',
+        VAR_ORIGINAL = '-',
+        DISABILITY_DESCR = 'IDEA'
+      )
+  )
+
+  

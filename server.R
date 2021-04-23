@@ -1,4 +1,5 @@
 library(shiny)
+library(lemon)
 
 server <- function(input, output) {
   
@@ -279,20 +280,21 @@ server <- function(input, output) {
     
     prepped_data %>%
       mutate(
-        PCT_OF_STDNT_WITHIN_COMPARISON_POP_WITHIN_TGT_VAR = round(ifelse(STUDENT_COUNT < 0, 0, STUDENT_COUNT) / STUDENT_COUNT_COMPARISON_POP * 100, 3),
-        PCT_OF_STDNT_WITHIN_BASE_POP_WITHIN_TGT_VAR = round(ifelse(STUDENT_COUNT_BASE_TARGET_VAR < 0, 0, STUDENT_COUNT_BASE_TARGET_VAR) / STUDENT_COUNT_BASE_POP * 100, 3)
+        PCT_OF_STDNT_WITHIN_COMPARISON_POP_WITHIN_TGT_VAR = round(ifelse(STUDENT_COUNT < 0, 0, STUDENT_COUNT) / STUDENT_COUNT_COMPARISON_POP, 3),
+        PCT_OF_STDNT_WITHIN_BASE_POP_WITHIN_TGT_VAR = round(ifelse(STUDENT_COUNT_BASE_TARGET_VAR < 0, 0, STUDENT_COUNT_BASE_TARGET_VAR) / STUDENT_COUNT_BASE_POP, 3)
       ) %>%
       ggplot(., aes(x=PCT_OF_STDNT_WITHIN_COMPARISON_POP_WITHIN_TGT_VAR, y=ETHNICITY_DESCR, col=ETHNICITY_DESCR)) +
       geom_point(aes(shape=SIG_DIFFERENCE), size = 5) +
       geom_vline(aes(xintercept = PCT_OF_STDNT_WITHIN_BASE_POP_WITHIN_TGT_VAR)) +
       scale_shape_manual(values = c(15, 16, 17)) +
-      facet_grid(VARIABLE_NAME ~ .) +
+      facet_rep_grid(VARIABLE_NAME ~ ., repeat.tick.labels = TRUE) +
       labs(
         x = "Percent of students within ethnicity group with target characteristic",
         y = NULL,
         colour = 'Student Ethnicity',
         shape ="Statistically significant difference?"
-        )
+        ) +
+      scale_x_continuous(limits=c(0, 1), labels = scales::percent, position = "top")
   })
   
   

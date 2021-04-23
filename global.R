@@ -11,10 +11,10 @@ source("helpers.R")
 # UI SELECTORS
 
 # LEA data
-lea_data <- read.csv("../2017-18 Public-Use Files/Data/LEA/CRDC/CSV/LEA Characteristics.csv")
+lea_data <- read.csv("./data/2017-18 Public-Use Files/Data/LEA/CRDC/CSV/LEA Characteristics.csv")
 
 # School data
-source_dir = "../2017-18 Public-Use Files/Data/SCH/CRDC/CSV/"
+source_dir = "./data/2017-18 Public-Use Files/Data/SCH/CRDC/CSV/"
 
 # Note: This file populates our school selector
 school_characteristics <- read.csv(paste0(source_dir, 'School Characteristics.csv')) %>%
@@ -78,19 +78,19 @@ ethnicity_sex_disagg_vars_to_extract <- list(
   # Academics
   list(
     code = 'SCH_GTENR',
-    var_name = 'Gifted and Talented Enrollment',
+    var_name = 'Gifted & Talented Enrollment',
     pattern = 'SCH_GTENR_(HI|AM|AS|HP|BL|WH|TR)',
     source_file = 'gifted_and_talented'
   ),
   list(
     code = 'SCH_APENR',
-    var_name = 'Enrolled in at least one AP Course',
+    var_name = 'In at least 1 AP course',
     pattern = 'SCH_APENR_(HI|AM|AS|HP|BL|WH|TR)',
     source_file = 'advanced_placement'
   ),
   list(
     code = 'SCH_IBENR',
-    var_name = 'Internatl. Baccalaureate Enrollment',
+    var_name = 'Intl. Bacc. Enrollment',
     pattern = 'SCH_IBENR_(HI|AM|AS|HP|BL|WH|TR)',
     source_file = 'international_baccalaureate'
   ),
