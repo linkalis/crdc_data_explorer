@@ -2,7 +2,7 @@ library(shiny)
 
 ui <- fluidPage(
   
-  titlePanel("Dept of Ed - Civil Rights Data Collection - Data Explorer"),
+  titlePanel("Dept of Education - Civil Rights Data Collection - Data Explorer"),
   
   sidebarLayout(
     sidebarPanel(width = 3,
@@ -13,13 +13,13 @@ ui <- fluidPage(
       uiOutput("leaSelector"),
       uiOutput("schoolSelector"),
       
-      p("Filter schools:"),
-      checkboxInput('elementaryschool', 'Elementary (1-5)', value = TRUE),
-      checkboxInput('middleschool', 'Middle school (6-8)', value = TRUE),
-      checkboxInput('highschool', 'High school (9-12)', value = TRUE),
-      checkboxInput('otherschool', 'Other level', value = TRUE),
-      checkboxInput('magnetcharter', 'Magnet / charter', value = TRUE),
-      checkboxInput('altspecialed', 'Alternative / special ed', value = TRUE),
+      # p("Filter schools:"),
+      # checkboxInput('elementaryschool', 'Elementary (1-5)', value = TRUE),
+      # checkboxInput('middleschool', 'Middle school (6-8)', value = TRUE),
+      # checkboxInput('highschool', 'High school (9-12)', value = TRUE),
+      # checkboxInput('otherschool', 'Other level', value = TRUE),
+      # checkboxInput('magnetcharter', 'Magnet / charter', value = TRUE),
+      # checkboxInput('altspecialed', 'Alternative / special ed', value = TRUE),
       
       hr(),
       selectInput(
@@ -39,6 +39,7 @@ ui <- fluidPage(
     
     
     mainPanel(
+      h2("School Characteristics"),
       fluidRow(
         column(width = 6, 
                textOutput("selectedLea"),
@@ -58,10 +59,12 @@ ui <- fluidPage(
       hr(),
       h2("Enrollment Demographics"),
       # By Ethnicity
+      h3("By Ethnicity"),
       fluidRow(
         column(width = 12, plotOutput("enrollment_by_ethnicity", height = '200px'))
       ),
       # By Gender
+      h3("By Gender"),
       fluidRow(
         column(width = 12, plotOutput("enrollment_by_gender", height = '200px'))
       ),
@@ -84,17 +87,28 @@ ui <- fluidPage(
       ),
       
       hr(),
-      h2("School Climate"),
+      h2("Student Support Profile"),
+      p("How does the school's staffing levels compare to other comparable schools across the state?  
+        The selected school's student-to-staff ratios for various support staff roles are shown in yellow below.
+        The comparison group (grey bars below) represents data from all schools within the state that
+        that share the same school characteristics and that have the respective support role staffed at
+        some level.  Schools that do not have a particular support role staffed do not factor into the
+        comparison group when calculating median staffing levels for a given role."),
+      p(strong("Lower student-to-staff ratios are better."), " Yellow bars that are ", em("shorter than"),
+        "the comparison grey bars indicate that that the selected school has ", em("more"), 
+        "staff available per student than the state median staffing level for a given role.  Yellow bars that are ",
+        em("longer than"), "the comparison grey bars indicate that the selected school has ", em("fewer"), 
+        "staff available per student than the state median staffing level for a given role."),
       fluidRow(
-        column(width = 6, plotOutput("allegations_plot")),
-        column(width = 6, plotOutput("incident_plot"))
+        column(width = 12, plotOutput("student_support_plot", height = '150px'))
       ),
       
       hr(),
-      h2("Student Support Profile"),
-      p(strong("Lower student-to-staff ratios are better."))
-      
-      
+      h2("School Climate"),
+      fluidRow(
+        column(width = 5, plotOutput("allegations_plot"), height = '200px'),
+        column(width = 7, plotOutput("incident_plot"), height = '200px')
+      )
     )
   )
   

@@ -331,7 +331,109 @@ server <- function(input, output) {
   ## STUDENT SUPPORT PROFILE ##
   #############################
   
-  # Get state-level data for context
+  student_support_comparison_data <- reactive({
+
+    # Find all other schools w/ similar characteristics in the state for comparison
+    school_support_per_student_state_avg <- school_characteristics %>%
+      filter(
+        LEA_STATE == school_metadata()$LEA_STATE & 
+          elementary_school == school_metadata()$elementary_school &
+          middle_school == school_metadata()$middle_school &
+          high_school == school_metadata()$high_school &
+          JJ == school_metadata()$JJ &
+          SCH_STATUS_SPED == school_metadata()$SCH_STATUS_SPED &
+          SCH_STATUS_MAGNET == school_metadata()$SCH_STATUS_MAGNET &
+          SCH_STATUS_CHARTER == school_metadata()$SCH_STATUS_CHARTER &
+          SCH_STATUS_ALT == school_metadata()$SCH_STATUS_ALT
+      ) %>%
+      inner_join(enrollment %>% 
+                   mutate(TOTAL_ENROLLMENT = TOT_ENR_M + TOT_ENR_F) %>% 
+                   select(LEA_STATE, LEAID, SCHID, TOTAL_ENROLLMENT), 
+                 by=c('LEAID', 'SCHID')) %>%
+      inner_join(school_support , by=c('LEAID', 'SCHID')) %>%
+      mutate(
+        RATIO_STUDENT_TO_TEACHER = ifelse(SCH_FTETEACH_TOT <= 0, NA, (TOTAL_ENROLLMENT /  SCH_FTETEACH_TOT)) ,
+        RATIO_STUDENT_TO_COUNSELOR = ifelse(SCH_FTECOUNSELORS <= 0, NA, (TOTAL_ENROLLMENT /  SCH_FTECOUNSELORS)),
+        RATIO_STUDENT_TO_LAWENFOFFICER = ifelse(SCH_FTESECURITY_LEO <= 0, NA, (TOTAL_ENROLLMENT / SCH_FTESECURITY_LEO)),
+        RATIO_STUDENT_TO_SECURITYGUARD = ifelse(SCH_FTESECURITY_GUA <= 0, NA, (TOTAL_ENROLLMENT / SCH_FTESECURITY_GUA)),
+        RATIO_STUDENT_TO_NURSE = ifelse(SCH_FTESERVICES_NUR <= 0, NA, (TOTAL_ENROLLMENT / SCH_FTESERVICES_NUR)),
+        RATIO_STUDENT_TO_PSYCHOLOGIST = ifelse(SCH_FTESERVICES_PSY <= 0, NA, (TOTAL_ENROLLMENT / SCH_FTESERVICES_PSY)),
+        RATIO_STUDENT_TO_SOCIALWORKER = ifelse(SCH_FTESERVICES_SOC <= 0, NA, (TOTAL_ENROLLMENT / SCH_FTESERVICES_SOC))
+      ) %>%
+      select(LEA_STATE, LEAID, SCHID, TOTAL_ENROLLMENT, starts_with('RATIO_')) %>%
+      gather(-LEA_STATE, -LEAID, -SCHID, -TOTAL_ENROLLMENT, key='VAR_ORIGINAL', value='STAFFING_RATIO') %>%
+      mutate(
+        LEVEL_OF_DETAIL = 'Statewide Median',
+        VARIABLE_CODE = 'RATIO_STUDENT_TO',
+        VARIABLE_NAME = 'Student to staff ratio',
+        VARIABLE_DETAIL_CODE = str_replace(VAR_ORIGINAL, 'RATIO_STUDENT_TO_', ''),
+        VARIABLE_DETAIL_DESCR = case_when(
+          VARIABLE_DETAIL_CODE == 'TEACHER' ~ 'Teacher',
+          VARIABLE_DETAIL_CODE == 'COUNSELOR' ~ 'School counselor',
+          VARIABLE_DETAIL_CODE == 'LAWENFOFFICER' ~ 'Law enforcement officer',
+          VARIABLE_DETAIL_CODE == 'SECURITYGUARD' ~ 'Security guard',
+          VARIABLE_DETAIL_CODE == 'NURSE' ~ 'Nurse',
+          VARIABLE_DETAIL_CODE == 'PSYCHOLOGIST' ~ 'Psychologist',
+          VARIABLE_DETAIL_CODE == 'SOCIALWORKER' ~ 'Social worker',
+          TRUE ~ as.character(VARIABLE_DETAIL_CODE)
+        )
+      ) %>%
+      group_by(LEA_STATE, LEVEL_OF_DETAIL, VAR_ORIGINAL, VARIABLE_CODE, VARIABLE_NAME, VARIABLE_DETAIL_CODE, VARIABLE_DETAIL_DESCR) %>%
+      summarise(STAFFING_RATIO = median(STAFFING_RATIO, na.rm = TRUE))
+    
+    school_support_per_student <- enrollment %>%
+      filter(LEAID == input$selected_lea_id & SCHID == input$selected_school_id) %>%
+      mutate(TOTAL_ENROLLMENT = TOT_ENR_M + TOT_ENR_F) %>%
+      select(LEAID, SCHID, TOTAL_ENROLLMENT) %>%
+      inner_join(school_support, by=c('LEAID', 'SCHID')) %>%
+      mutate(
+       RATIO_STUDENT_TO_TEACHER = ifelse(is.infinite(TOTAL_ENROLLMENT / SCH_FTETEACH_TOT), NA, TOTAL_ENROLLMENT / SCH_FTETEACH_TOT),
+       RATIO_STUDENT_TO_COUNSELOR = ifelse(is.infinite(TOTAL_ENROLLMENT / SCH_FTECOUNSELORS), NA, TOTAL_ENROLLMENT / SCH_FTECOUNSELORS),
+       RATIO_STUDENT_TO_LAWENFOFFICER = ifelse(is.infinite(TOTAL_ENROLLMENT / SCH_FTESECURITY_LEO), NA, TOTAL_ENROLLMENT / SCH_FTESECURITY_LEO),
+       RATIO_STUDENT_TO_SECURITYGUARD = ifelse(is.infinite(TOTAL_ENROLLMENT / SCH_FTESECURITY_GUA), NA, TOTAL_ENROLLMENT / SCH_FTESECURITY_GUA),
+       RATIO_STUDENT_TO_NURSE = ifelse(is.infinite(TOTAL_ENROLLMENT / SCH_FTESERVICES_NUR), NA, TOTAL_ENROLLMENT / SCH_FTESERVICES_NUR),
+       RATIO_STUDENT_TO_PSYCHOLOGIST = ifelse(is.infinite(TOTAL_ENROLLMENT / SCH_FTESERVICES_PSY), NA, TOTAL_ENROLLMENT / SCH_FTESERVICES_PSY),
+       RATIO_STUDENT_TO_SOCIALWORKER = ifelse(is.infinite(TOTAL_ENROLLMENT / SCH_FTESERVICES_SOC), NA, TOTAL_ENROLLMENT / SCH_FTESERVICES_SOC)
+      ) %>%
+      select(LEAID, SCHID, TOTAL_ENROLLMENT, starts_with('RATIO_')) %>%
+      gather(-LEAID, -SCHID, -TOTAL_ENROLLMENT, key='VAR_ORIGINAL', value='STAFFING_RATIO') %>%
+      mutate(
+       LEVEL_OF_DETAIL = 'Selected School',
+       VARIABLE_CODE = 'RATIO_STUDENT_TO',
+       VARIABLE_NAME = 'Student to staff ratio',
+       VARIABLE_DETAIL_CODE = str_replace(VAR_ORIGINAL, 'RATIO_STUDENT_TO_', ''),
+       VARIABLE_DETAIL_DESCR = case_when(
+         VARIABLE_DETAIL_CODE == 'TEACHER' ~ 'Teacher',
+         VARIABLE_DETAIL_CODE == 'COUNSELOR' ~ 'School counselor',
+         VARIABLE_DETAIL_CODE == 'LAWENFOFFICER' ~ 'Law enforcement officer',
+         VARIABLE_DETAIL_CODE == 'SECURITYGUARD' ~ 'Security guard',
+         VARIABLE_DETAIL_CODE == 'NURSE' ~ 'Nurse',
+         VARIABLE_DETAIL_CODE == 'PSYCHOLOGIST' ~ 'Psychologist',
+         VARIABLE_DETAIL_CODE == 'SOCIALWORKER' ~ 'Social worker',
+         TRUE ~ as.character(VARIABLE_DETAIL_CODE)
+       )
+      )
+    
+    school_support_per_student_w_state_avg <- school_support_per_student %>%
+      select(-LEAID, -SCHID, -TOTAL_ENROLLMENT) %>%
+      bind_rows(school_support_per_student_state_avg %>% select(-LEA_STATE))
+    
+    return(school_support_per_student_w_state_avg)
+  })
+  
+  output$student_support_plot <- renderPlot({
+    ggplot(student_support_comparison_data(), aes(x=NA, y=STAFFING_RATIO, fill=LEVEL_OF_DETAIL)) +
+      geom_bar(stat="identity", position="dodge") +
+      facet_grid(~VARIABLE_DETAIL_DESCR, scales="free") +
+      scale_fill_manual(values=c('#ffcc33', '#cccccc'), name=NULL) +
+      coord_flip() +
+      labs(
+        x=NULL,
+        y="Student-to-staff ratio"
+      ) +  
+      theme(axis.ticks.y = element_blank(), axis.text.y = element_blank())
+  })
+  
   
   
 }

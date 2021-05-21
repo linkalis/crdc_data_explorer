@@ -1,6 +1,6 @@
 library(tidyverse)
 
-source_dir = "../2017-18 Public-Use Files/Data/SCH/CRDC/CSV/"
+source_dir = "./data/2017-18 Public-Use Files/Data/SCH/CRDC/CSV/"
 
 school_characteristics <- read.csv(paste0(source_dir, 'School Characteristics.csv'))
 enrollment_data <- read.csv(paste0(source_dir, 'Enrollment.csv'))
@@ -287,7 +287,7 @@ for (var in school_vars_to_extract) {
       VARIABLE_DETAIL_CODE = sub(paste0(var$pattern, '_'), '', VAR_ORIGINAL)
     ) %>%
     # Need this weird group_by hack to trick it into doing a list lookup, b/c list lookups don't
-    # jive with dplyrs style of vectorization
+    # jive with dplyr's style of vectorization
     # https://stackoverflow.com/questions/38385536/accessing-list-elements-within-mutate
     group_by(VARIABLE_DETAIL_CODE) %>%
     mutate(
@@ -476,25 +476,38 @@ ggplot(., aes(x=VARIABLE_DETAIL_DESCR, y=COUNT)) +
 
 
 
-# STUDENT SUPPORT
+# STUDENT SUPPORT ####################################################################################
 
-# Find all other schools of similar level in the state for comparison
+# Find all other schools w/ similar characteristics in the state for comparison
+
+target_school_characteristics <- school_characteristics %>% 
+  filter(LEAID == '2711250' & SCHID == '510')
 
 school_support_per_student_state_avg <- school_characteristics %>%
-  filter(LEA_STATE == 'MN' & high_school == 'Yes') %>%
+  filter(
+    LEA_STATE == target_school_characteristics$LEA_STATE & 
+    elementary_school == target_school_characteristics$elementary_school &
+    middle_school == target_school_characteristics$middle_school &
+    high_school == target_school_characteristics$high_school &
+    JJ == target_school_characteristics$JJ &
+    SCH_STATUS_SPED == target_school_characteristics$SCH_STATUS_SPED &
+    SCH_STATUS_MAGNET == target_school_characteristics$SCH_STATUS_MAGNET &
+    SCH_STATUS_CHARTER == target_school_characteristics$SCH_STATUS_CHARTER &
+    SCH_STATUS_ALT == target_school_characteristics$SCH_STATUS_ALT
+    ) %>%
   inner_join(enrollment %>% 
          mutate(TOTAL_ENROLLMENT = TOT_ENR_M + TOT_ENR_F) %>% 
          select(LEA_STATE, LEAID, SCHID, TOTAL_ENROLLMENT), 
        by=c('LEAID', 'SCHID')) %>%
   inner_join(school_support , by=c('LEAID', 'SCHID')) %>%
   mutate(
-    RATIO_STUDENT_TO_TEACHER = ifelse(SCH_FTETEACH_TOT <= 0, 0, (TOTAL_ENROLLMENT /  SCH_FTETEACH_TOT)) ,
-    RATIO_STUDENT_TO_COUNSELOR = ifelse(SCH_FTECOUNSELORS <= 0, 0, (TOTAL_ENROLLMENT /  SCH_FTECOUNSELORS)),
-    RATIO_STUDENT_TO_LAWENFOFFICER = ifelse(SCH_FTESECURITY_LEO <= 0, 0, (TOTAL_ENROLLMENT / SCH_FTESECURITY_LEO)),
-    RATIO_STUDENT_TO_SECURITYGUARD = ifelse(SCH_FTESECURITY_GUA <= 0, 0, (TOTAL_ENROLLMENT / SCH_FTESECURITY_GUA)),
-    RATIO_STUDENT_TO_NURSE = ifelse(SCH_FTESERVICES_NUR <= 0, 0, (TOTAL_ENROLLMENT / SCH_FTESERVICES_NUR)),
-    RATIO_STUDENT_TO_PSYCHOLOGIST = ifelse(SCH_FTESERVICES_PSY <= 0, 0, (TOTAL_ENROLLMENT / SCH_FTESERVICES_PSY)),
-    RATIO_STUDENT_TO_SOCIALWORKER = ifelse(SCH_FTESERVICES_SOC <= 0, 0, (TOTAL_ENROLLMENT / SCH_FTESERVICES_SOC))
+    RATIO_STUDENT_TO_TEACHER = ifelse(SCH_FTETEACH_TOT <= 0, NA, (TOTAL_ENROLLMENT /  SCH_FTETEACH_TOT)) ,
+    RATIO_STUDENT_TO_COUNSELOR = ifelse(SCH_FTECOUNSELORS <= 0, NA, (TOTAL_ENROLLMENT /  SCH_FTECOUNSELORS)),
+    RATIO_STUDENT_TO_LAWENFOFFICER = ifelse(SCH_FTESECURITY_LEO <= 0, NA, (TOTAL_ENROLLMENT / SCH_FTESECURITY_LEO)),
+    RATIO_STUDENT_TO_SECURITYGUARD = ifelse(SCH_FTESECURITY_GUA <= 0, NA, (TOTAL_ENROLLMENT / SCH_FTESECURITY_GUA)),
+    RATIO_STUDENT_TO_NURSE = ifelse(SCH_FTESERVICES_NUR <= 0, NA, (TOTAL_ENROLLMENT / SCH_FTESERVICES_NUR)),
+    RATIO_STUDENT_TO_PSYCHOLOGIST = ifelse(SCH_FTESERVICES_PSY <= 0, NA, (TOTAL_ENROLLMENT / SCH_FTESERVICES_PSY)),
+    RATIO_STUDENT_TO_SOCIALWORKER = ifelse(SCH_FTESERVICES_SOC <= 0, NA, (TOTAL_ENROLLMENT / SCH_FTESERVICES_SOC))
   ) %>%
   select(LEA_STATE, LEAID, SCHID, TOTAL_ENROLLMENT, starts_with('RATIO_')) %>%
   gather(-LEA_STATE, -LEAID, -SCHID, -TOTAL_ENROLLMENT, key='VAR_ORIGINAL', value='STAFFING_RATIO') %>%
@@ -515,10 +528,13 @@ school_support_per_student_state_avg <- school_characteristics %>%
     )
   ) %>%
   group_by(LEA_STATE, LEVEL_OF_DETAIL, VAR_ORIGINAL, VARIABLE_CODE, VARIABLE_NAME, VARIABLE_DETAIL_CODE, VARIABLE_DETAIL_DESCR) %>%
-  summarise(STAFFING_RATIO = mean(STAFFING_RATIO))
+  summarise(
+    #STAFFING_RATIO = mean(STAFFING_RATIO, na.rm = TRUE),
+    STAFFING_RATIO = median(STAFFING_RATIO, na.rm = TRUE)
+    )
 
 school_support_per_student <- enrollment %>%
-  filter(LEAID == '2711250' & SCHID == '510') %>%
+  filter(LEAID == target_school_characteristics$LEAID & SCHID == target_school_characteristics$SCHID) %>%
   mutate(TOTAL_ENROLLMENT = TOT_ENR_M + TOT_ENR_F) %>%
   select(LEAID, SCHID, TOTAL_ENROLLMENT) %>%
   inner_join(school_support , by=c('LEAID', 'SCHID')) %>%
@@ -568,6 +584,8 @@ ggplot(school_support_per_student_w_state_avg, aes(x=NA, y=STAFFING_RATIO, fill=
 
   
 # Pct of teaching staff that is in their first few years of teaching
+
+
 
 
 # DISCIPLINE PRACTICES
