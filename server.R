@@ -15,7 +15,7 @@ server <- function(input, output) {
       arrange(LEA_NAME) %>%
       summarise(lea_list = list(as.list(setNames(LEAID, LEA_NAME))))
 
-    selectInput("selected_lea_id", "Choose a District/LEA:", leas$lea_list[[1]])
+    selectInput("selected_lea_id", "Select a District/LEA:", leas$lea_list[[1]])
   })
   
   # School selector
@@ -41,12 +41,12 @@ server <- function(input, output) {
 
     # This approach isn't working to filter: https://stackoverflow.com/questions/32148144/condition-filter-in-dplyr-based-on-shiny-input?rq=1
     
-    selectInput("selected_school_id", "Choose a School:", schools$school_list[[1]])
+    selectInput("selected_school_id", "Select a School:", schools$school_list[[1]])
   })
   
   # Confirm choices
-  output$selectedLea <- renderText({ paste("Selected LEAID:", input$selected_lea_id ) })
-  output$selectedSchool <- renderText({ paste("Selected SCHID:", input$selected_school_id ) })
+  output$selectedLea <- renderText({ paste("Selected LEA:", school_metadata()$LEA_NAME, '(', input$selected_lea_id , ')' ) })
+  output$selectedSchool <- renderText({ paste("Selected School:", school_metadata()$SCH_NAME, '(', input$selected_school_id, ')') })
   
   
   ##############

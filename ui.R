@@ -1,12 +1,11 @@
 library(shiny)
+library(shinydashboard)
 
-ui <- fluidPage(
+ui <- dashboardPage(skin = "yellow",
   
-  titlePanel("Dept of Education - Civil Rights Data Collection - Data Explorer"),
+  dashboardHeader(title = "CRDC Data Explorer"),
   
-  sidebarLayout(
-    sidebarPanel(width = 3,
-      #"Select a state, district, and school:",
+  dashboardSidebar(
       
       selectInput("selected_state", "Select a State:", choices = unique(lea_data$LEA_STATE), selected = 'MN'),
       
@@ -34,11 +33,15 @@ ui <- fluidPage(
           'Two or More Races' = 'TR'
           ),
         selected = 'WH'
-        )
-      ),
+        ),
+      
+      hr(),
+      p("Data source: "),
+      tags$a(href = "https://www2.ed.gov/about/offices/list/ocr/docs/crdc-2017-18.html",
+        "U.S. Department of Education, Civil Rights Data Collection, 2017-2018.")
+        ),
     
-    
-    mainPanel(
+    dashboardBody(
       h2("School Characteristics"),
       fluidRow(
         column(width = 6, 
@@ -56,20 +59,20 @@ ui <- fluidPage(
                )
       ),
       
-      hr(),
       h2("Enrollment Demographics"),
       # By Ethnicity
-      h3("By Ethnicity"),
-      fluidRow(
-        column(width = 12, plotOutput("enrollment_by_ethnicity", height = '200px'))
+      box(
+        width = 12, 
+        title = "By ethnicity",
+        plotOutput("enrollment_by_ethnicity", height = '200px')
       ),
       # By Gender
-      h3("By Gender"),
-      fluidRow(
-        column(width = 12, plotOutput("enrollment_by_gender", height = '200px'))
+      box(
+        width = 12,
+        title = "By gender",
+        plotOutput("enrollment_by_gender", height = '200px')
       ),
       
-      hr(),
       h2("Academic Opportunities Comparison"),
       p("Are all students in the school similarly represented in the school's academic opportunities? 
         If students are equitably represented, we expect the percentage of students in each 
@@ -82,34 +85,41 @@ ui <- fluidPage(
         opportunity. The 'circle' symbol denotes places where subgroups of students are too small to draw 
         statistically meaningful conclusions from.  Use the selector on the side panel to select the 
         base group used for comparison."),
-      fluidRow(
-        column(width = 12, plotOutput("academic_opportunities_comparison_plot", height = '700px'))
+      box(
+        width = 12, 
+        title = "Enrollment rates in school academic opportunities",
+        plotOutput("academic_opportunities_comparison_plot", height = '700px')
       ),
       
-      hr(),
       h2("Student Support Profile"),
       p("How does the school's staffing levels compare to other comparable schools across the state?  
-        The selected school's student-to-staff ratios for various support staff roles are shown in yellow below.
-        The comparison group (grey bars below) represents data from all schools within the state that
+        The yellow bars below show the selected school's student-to-staff ratios for various support staff roles.
+        The comparison group--represented by grey bars below--includes data from all schools within the state that
         that share the same school characteristics and that have the respective support role staffed at
-        some level.  Schools that do not have a particular support role staffed do not factor into the
-        comparison group when calculating median staffing levels for a given role."),
+        some level.  (Note: Schools that do not have a particular support role staffed do not factor into the
+        comparison group when calculating median staffing levels for a given role.)"),
       p(strong("Lower student-to-staff ratios are better."), " Yellow bars that are ", em("shorter than"),
         "the comparison grey bars indicate that that the selected school has ", em("more"), 
         "staff available per student than the state median staffing level for a given role.  Yellow bars that are ",
         em("longer than"), "the comparison grey bars indicate that the selected school has ", em("fewer"), 
         "staff available per student than the state median staffing level for a given role."),
-      fluidRow(
-        column(width = 12, plotOutput("student_support_plot", height = '150px'))
+      box(
+        width = 12, 
+        title = "Student-to-staff ratios for school staff roles",
+        plotOutput("student_support_plot", height = '150px')
       ),
       
-      hr(),
       h2("School Climate"),
-      fluidRow(
-        column(width = 5, plotOutput("allegations_plot"), height = '200px'),
-        column(width = 7, plotOutput("incident_plot"), height = '200px')
-      )
+      p("How many allegations of bullying and/or incidents of violence were reported during the annual reporting
+        period?  These are cumulative counts based on the entire 2017-18 regular school year, not including 
+        intersession or summer."),  
+      p(strong("Allegations of harassment or bullying: "), "Allegations can be reported by anyone (e.g., alleged victim; 
+        parents of alleged victim). The harassment or bullying can be carried out by students, school employees, 
+        or non-employee third parties. Alleged victims must be students.)"),
+      p(strong("Incidents: "), "Includes incidents of violence that occurred before, during, or after normal school hours.
+        Counts incidents regardless of whether any disciplinary action was taken, and regardless of whether 
+        students or non-students were involved."),
+      box(width = 5, plotOutput("allegations_plot", height = '200px')),
+      box(width = 7, plotOutput("incident_plot", height = '200px'))
     )
-  )
-  
 )
